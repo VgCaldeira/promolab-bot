@@ -96,10 +96,30 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
             if (!enviados.has(idUnico)) {
+                
+                let destaque = '🔥 OFERTA BOA';
 
-                const mensagem = `🔥 ${promo.titulo}
+                const titulo = promo.titulo.toLowercase();
 
-👉 ${promo.link}`;
+                if (titulo.includes('iphone')) {
+                    destque = '📱 PROMO DE IPHONE';
+                } else if (titulo.includes('rtx') || titulo.includes('placa de vídeo')) {
+                    destaque = '🎮 GPU EM PROMOÇÃO';
+                } else if (titulo.includes('notebook')) {
+                    destaque = '💻 NOTEBOOK EM OFERTA';
+                } else if (titulo.includes('tv')) {
+                    destaque = '📺 TV COM DESCONTO';
+                } else if (titulo.includes('air fryer')) {
+                    destaque = '🍟 AIR FRYER EM PROMOÇÃO'
+                }
+
+                const mensagem = `${destaque}
+
+                🔥 ${promo.titulo}
+
+                ⚡ Corre que pode acabar rápido
+
+                👉 ${promo.link}`;
 
                 await client.sendMessage(grupoId, mensagem);
 
