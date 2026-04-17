@@ -35,7 +35,7 @@ async function pegarPromocoes() {
     try {
         if (!page) return [];
 
-        await page.goto('https://www.pelando.com.br/', {
+        await page.goto('https://www.pelando.com.br/recentes', {
             waitUntil: 'domcontentloaded'
         });
 
@@ -59,7 +59,7 @@ async function pegarPromocoes() {
                 }
             });
 
-            return itens.slice(0, 5);
+            return itens.slice(0, 20);
         });
 
         return promocoes;
@@ -84,7 +84,7 @@ client.on('ready', async () => {
         }
     }
 
-    cron.schedule('*/1 * * * *', async () => {
+    cron.schedule('*/30 * * * * *', async () => {
         console.log('🔎 Buscando novas promoções...');
 
         const promos = await pegarPromocoes();
