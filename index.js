@@ -1,8 +1,7 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
-const axios = require('axios');
-const cheerio = require('cheerio');
+const puppeteer = require('puppeteer');
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -14,71 +13,97 @@ const client = new Client({
 
 const grupoId = '120363421936203640@g.us';
 
-// evita repetição
 const enviados = new Set();
 
-// QR
+let browser;
+let page;
+
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
-// Função promoções
+async function iniciarScraper() {
+    browser = await puppeteer.launch({
+        headless: false,
+        args: ['--no-sandbox']
+    });
+
+    page = await browser.newPage();
+}
+
 async function pegarPromocoes() {
     try {
-        const { data } = await axios.get('https://www.pelando.com.br/');
-        const $ = cheerio.load(data);
+        if (!page) return [];
 
-        const promocoes = [];
-
-        $('a.thread-link').each((i, el) => {
-            const titulo = $(el).text().trim();
-            const link = 'https://www.pelando.com.br' + $(el).attr('href');
-
-            if (titulo && link) {
-                promocoes.push({ titulo, link });
-            }
+        await page.goto('https://www.pelando.com.br/', {
+            waitUntil: 'domcontentloaded'
         });
 
-        return promocoes.slice(0, 10);
+        await page.waitForSelector('a[href*="/d/"]', { timeout: 15000 });
+
+        const promocoes = await page.evaluate(() => {
+            const itens = [];
+            const vistos = new Set();
+
+            document.querySelectorAll('a[href*="/d/"]').forEach(el => {
+                const titulo = el.innerText.trim();
+                const link = el.href;
+
+                if (
+                    titulo &&
+                    titulo.length > 20 &&
+                    !vistos.has(link)
+                ) {
+                    vistos.add(link);
+                    itens.push({ titulo, link });
+                }
+            });
+
+            return itens.slice(0, 5);
+        });
+
+        return promocoes;
     } catch (err) {
         console.log('Erro ao buscar promos:', err.message);
         return [];
     }
 }
 
-//  Quando conecta
 client.on('ready', async () => {
     console.log('Bot Conectado!');
 
-    //  ENVIA AS ÚLTIMAS IMEDIATAMENTE
-    console.log('📦 Enviando últimas promoções...');
+    await iniciarScraper();
+
     const promosIniciais = await pegarPromocoes();
+    console.log('Inicial:', promosIniciais.length);
 
-    for (let promo of promosIniciais) {
-        const mensagem = `🔥 ${promo.titulo}
-
-👉 ${promo.link}`;
-
-        await client.sendMessage(grupoId, mensagem);
-        enviados.add(promo.link);
+    if (promosIniciais.length > 0) {
+        for (let promo of promosIniciais) {
+            const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
+            enviados.add(idUnico);
+        }
     }
 
-    console.log('✅ Inicial enviado!');
-
-    //MONITORA NOVAS PROMOÇÕES
     cron.schedule('*/1 * * * *', async () => {
         console.log('🔎 Buscando novas promoções...');
 
         const promos = await pegarPromocoes();
+        console.log('Encontradas:', promos.length);
 
-        for (let promo of promos) {
-            if (!enviados.has(promo.link)) {
+        if (!promos.length) return;
+
+        for (let promo of promos.reverse()) {
+            const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
+
+            if (!enviados.has(idUnico)) {
+
                 const mensagem = `🔥 ${promo.titulo}
 
 👉 ${promo.link}`;
 
                 await client.sendMessage(grupoId, mensagem);
-                enviados.add(promo.link);
+
+                enviados.add(idUnico);
 
                 console.log('🆕 Nova promo enviada!');
             }
