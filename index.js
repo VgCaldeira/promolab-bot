@@ -100,9 +100,43 @@ async function pegarPromocoes() {
     }
 }
 
+async function pegarDetalhesPromo(link) {
+    try {
+        const novaPagina = await browser.newPage();
+
+        await novaPagina.setUserAgent(
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
+        );
+
+        await novaPagina.goto(link, {
+            waitUntil: 'domcontentloaded'
+        });
+
+        await new Promise(r => setTimeout(r, 2000));
+
+        const dados = await novaPagina.evaluate(() => {
+            const textoPagina = document.body.innerText || '';
+
+            const precos = textoPagina.match(/R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
+
+            const precoAntigo = detalhes.precoAntigo.replace('\n', ' ');
+            const precoAtual = detalhes.precoAtual.replace('\n', ' ');
+
+            return { precoAtual, precoAntigo };
+        });
+
+        await novaPagina.close();
+
+        return dados;
+    } catch (err) {
+        console.log('Erro ao pegar detalhes:', err.mensage);
+        return { precoAtual: '', precoAntigo: ''};
+    } 
+}
+
 async function gerarCopy(titulo) {
     if (!openai) {
-        return `🔥 ${titulo}\n\n⚡ Corre que pode acabar rápido`
+        return `🔥 ${titulo}\n\n⚡ CORRE! preço pode subir a qualquer momento`
     }
 
     try {
@@ -184,8 +218,9 @@ client.on('ready', async () => {
         for (let promo of promos.reverse()) {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
-            if (!enviados.has(idUnico)) {
-                let destaque = '🔥 OFERTA BOA';
+         if (!enviados.has(idUnico)) {
+             const detalhes = await pegarDetalhesPromo(promo.link);
+                let destaque = '🔥 OFERTA INSANA';
 
                 const titulo = (promo.titulo || '').toLowerCase();
 
@@ -227,9 +262,14 @@ ${copy}
                 } else {
                     mensagem = `${destaque}
 
-🔥 ${promo.titulo}
+${promo.titulo}
 
-👉 ${promo.link}`;
+${detalhes.precoAntigo ? `De ${detalhes.precoAntigo} ❌` : ''}
+${detalhes.precoAtual ? `Por ${detalhes.precoAtual} ✅` : '💸 Preço abaixo do normal'}
+
+⚡ Corre que pode acabar
+
+🔗 ${promo.link}`;
                 }
 
                 await client.sendMessage(grupoId, mensagem);
