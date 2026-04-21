@@ -13,11 +13,15 @@ const telegramBot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
 
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-const OpenAI = require('openai');
+let openai = null;
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+if (process.env.USE_OPENAI === 'true') {
+    const OpenAI = require('openai');
+
+    openai = new OpenAI({
+        apiKey: process.env.OPENAI_API_KEY
+    });
+}
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -37,14 +41,20 @@ let page;
 let chamadasIA = 0;
 const LIMITE_IA = 10;
 
+let contadorExecucoes = 0;
+
+let cronIniciado = false;
+let buscandoPromocoes = false;
+
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
 
 async function iniciarScraper() {
     browser = await puppeteer.launch({
-        headless: false,
-        args: ['--no-sandbox']
+        headless: true,
+        args: ['--no-sandbox'],
+        userDataDir: '/tmp/promolab-scraper'
     });
 
     page = await browser.newPage();
@@ -91,13 +101,26 @@ async function pegarPromocoes() {
 }
 
 async function gerarCopy(titulo) {
+    if (!openai) {
+        return `🔥 ${titulo}\n\n⚡ Corre que pode acabar rápido`
+    }
+
     try {
         const resposta = await openai.chat.completions.create({
             model: 'gpt-4.1-mini',
             messages: [
                 {
                     role: 'user',
-                    content: `Crie uma mensagem curta e persuasiva para WhatsApp vendendo este produto: ${titulo}`
+                    content: `Crie uma mensagem curta, persuasiva e com gatilho de urgência para WhatsApp.
+
+Produto: ${titulo}
+
+Formato:
+- 1 headline chamativa
+- 1 benefício claro
+- 1 urgência
+
+Sem texto longo.`
                 }
             ]
         });
@@ -111,9 +134,15 @@ async function gerarCopy(titulo) {
 }
 
 client.on('ready', async () => {
+    if (cronIniciado) {
+        console.log('Cron já iniciado, ignorando novo ready.');
+        return;
+    }
+
     console.log('Bot Conectado!');
 
     await iniciarScraper();
+    cronIniciado = true;
 
     const promosIniciais = await pegarPromocoes();
     console.log('Inicial:', promosIniciais.length);
@@ -125,8 +154,27 @@ client.on('ready', async () => {
         }
     }
 
-    cron.schedule('*/1 * * * *', async () => {
+    cron.schedule('*/3 * * * *', async () => {
+    if (contadorExecucoes >= 20) {
+        console.log('♻️ Reiniciando navegador...');
+        
+        await browser.close();
+        await iniciarScraper();
+
+        contadorExecucoes = 0;
+    }
+    
+    if (buscandoPromocoes) {
+        console.log('Busca já em andamento, pulando esta execução.');
+        return;
+    }
+
+    buscandoPromocoes = true;
+
+    try {
         console.log('🔎 Buscando novas promoções...');
+
+        contadorExecucoes++;
 
         const promos = await pegarPromocoes();
         console.log('Encontradas:', promos.length);
@@ -137,7 +185,6 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
             if (!enviados.has(idUnico)) {
-
                 let destaque = '🔥 OFERTA BOA';
 
                 const titulo = (promo.titulo || '').toLowerCase();
@@ -187,14 +234,26 @@ ${copy}
 
                 await client.sendMessage(grupoId, mensagem);
 
-                await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
+                try {
+                    await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
+                } catch (err) {
+                    console.log('Erro Telegram:', err.message);
+                }
 
                 enviados.add(idUnico);
+
+                 if (enviados.size > 500) {
+                    console.log('♻️ Limpando histórico de enviados...');
+                    enviados.clear();
+                }
 
                 console.log('🆕 Nova promo enviada!');
                 break;
             }
         }
+     } finally {
+        buscandoPromocoes = false;
+     }
     });
 });
 
