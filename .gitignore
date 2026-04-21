@@ -1,4 +1,17 @@
 node_modules/
+
+# WhatsApp session
 .wwebjs_auth/
 .wwebjs_cache/
+
+# env (dados sensíveis)
 .env
+.env.*
+
+# logs
+*.log
+npm-debug.log*
+
+# sistema
+.DS_Store
+Thumbs.db

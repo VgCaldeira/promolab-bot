@@ -5,6 +5,14 @@ const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 const puppeteer = require('puppeteer');
 
+const TelegramBot = require('node-telegram-bot-api');
+
+const telegramBot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
+    polling: false
+});
+
+const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
+
 const OpenAI = require('openai');
 
 const openai = new OpenAI({
@@ -40,14 +48,20 @@ async function iniciarScraper() {
     });
 
     page = await browser.newPage();
+
+    await page.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
+    );
 }
 
 async function pegarPromocoes() {
     try {
         if (!page) return [];
 
+        await new Promise(r => setTimeout(r, 2000));
+
         await page.goto('https://www.pelando.com.br/recentes', {
-            waitUntil: 'domcontentloaded'
+            waitUntil: 'networkidle2'
         });
 
         await page.waitForSelector('a[href*="/d/"]', { timeout: 15000 });
@@ -172,6 +186,8 @@ ${copy}
                 }
 
                 await client.sendMessage(grupoId, mensagem);
+
+                await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
 
                 enviados.add(idUnico);
 
