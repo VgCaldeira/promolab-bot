@@ -46,6 +46,16 @@ let contadorExecucoes = 0;
 let cronIniciado = false;
 let buscandoPromocoes = false;
 
+const buscasML = [
+    'air fryer',
+    'cafeteira',
+    'kit ferramenta',
+    'suporte celular carro',
+    'fone bluetooth',
+    'perfume masculino',
+    'organizador cozinha'
+];
+
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
 });
@@ -54,7 +64,6 @@ async function iniciarScraper() {
     browser = await puppeteer.launch({
         headless: true,
         args: ['--no-sandbox'],
-        userDataDir: '/tmp/promolab-scraper'
     });
 
     page = await browser.newPage();
@@ -63,6 +72,53 @@ async function iniciarScraper() {
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
     );
 }
+
+function escolherBuscaML() {
+    const indice = Math.floor(Math.random() * buscasML.length);
+    return buscasML[indice];
+}
+
+async function buscarProdutosML(termo) {
+    try {
+        if (!page) return [];
+
+        const url = `https://lista.mercadolivre.com.br/${encodeURIComponent(termo)}`;
+
+        await page.goto(url, {
+            waitUntil: 'networkidle2'
+        });
+
+        await page.waitForSelector('a[href*="mercadolivre.com.br"]', { timeout: 15000 });
+
+        const produtos = await page.evaluate(() => {
+            const itens = [];
+            const vistos = new Set();
+
+            document.querySelectorAll('a').forEach(el => {
+                const titulo = el.querySelector('h2')?.innerText?.trim() || '';
+                const link = el.href;
+
+                if (
+                    titulo &&
+                    titulo.length > 10 &&
+                    link &&
+                    link.includes('MLB-') &&
+                    !vistos.has(link)
+                ) {
+                    vistos.add(link);
+                    itens.push({ titulo, link });
+                }
+            });
+            
+            return itens.slice(0, 20);
+        });
+
+            return produtos;
+        } catch (err) {
+            console.log('Erro ao buscar produtos no ML:', err.message);
+            return [];
+        }
+    }
 
 async function pegarPromocoes() {
     try {
@@ -83,8 +139,8 @@ async function pegarPromocoes() {
             document.querySelectorAll('a[href*="/d/"]').forEach(el => {
                 const titulo = el.innerText.trim();
                 const link = el.href;
-
-                if (titulo && titulo.length > 20 && !vistos.has(link)) {
+               
+                if ( titulo && titulo.length > 20 && !vistos.has(link)) {
                     vistos.add(link);
                     itens.push({ titulo, link });
                 }
@@ -115,22 +171,29 @@ async function pegarDetalhesPromo(link) {
         await new Promise(r => setTimeout(r, 2000));
 
         const dados = await novaPagina.evaluate(() => {
-            const textoPagina = document.body.innerText || '';
+            const textoPagina = (document.body.innerText || '').toLowerCase();
 
             const precos = textoPagina.match(/R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
 
-            const precoAntigo = detalhes.precoAntigo.replace('\n', ' ');
-            const precoAtual = detalhes.precoAtual.replace('\n', ' ');
+            const precoAtual = (precos[0] || '').replace(/\n/g, ' ');
+            const precoAntigo = (precos[1] || '').replace(/\n/g, ' ');
 
-            return { precoAtual, precoAntigo };
+            const ehMercadoLivre = 
+                textoPagina.includes('mercado livre') ||
+                textoPagina.includes('mercadolivre') ||
+                textoPagina.includes('no ml') ||
+                textoPagina.includes('ml') ||
+                textoPagina.includes('mercado livre oficial');
+
+            return { precoAtual, precoAntigo, ehMercadoLivre };
         });
 
         await novaPagina.close();
 
         return dados;
     } catch (err) {
-        console.log('Erro ao pegar detalhes:', err.mensage);
-        return { precoAtual: '', precoAntigo: ''};
+        console.log('Erro ao pegar detalhes:', err.message);
+        return { precoAtual: '', precoAntigo: '', ehMercadoLivre: false };
     } 
 }
 
@@ -220,6 +283,10 @@ client.on('ready', async () => {
 
          if (!enviados.has(idUnico)) {
              const detalhes = await pegarDetalhesPromo(promo.link);
+                if (!detalhes.ehMercadoLivre) {
+                    continue;
+                }
+                
                 let destaque = '🔥 OFERTA INSANA';
 
                 const titulo = (promo.titulo || '').toLowerCase();
