@@ -171,7 +171,8 @@ async function pegarDetalhesPromo(link) {
         await new Promise(r => setTimeout(r, 2000));
 
         const dados = await novaPagina.evaluate(() => {
-            const textoPagina = (document.body.innerText || '').toLowerCase();
+            const textoOriginal = document.body.innerText || '';
+            const textoPagina = textoOriginal.toLowerCase();
 
             const precos = textoPagina.match(/R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
 
@@ -182,18 +183,34 @@ async function pegarDetalhesPromo(link) {
                 textoPagina.includes('mercado livre') ||
                 textoPagina.includes('mercadolivre') ||
                 textoPagina.includes('no ml') ||
-                textoPagina.includes('ml') ||
                 textoPagina.includes('mercado livre oficial');
 
-            return { precoAtual, precoAntigo, ehMercadoLivre };
+            let linkML = '';
+
+            document.querySelectorAll('a').forEach(a => {
+                const href = a.href || '';
+                const texto = (a.innerText || '').toLowerCase();
+
+                if (
+                   href.includes('mercadolivre') ||
+                   href.includes('mercadolibre') ||
+                   texto.includes('ir para loja') ||
+                   texto.includes('ver oferta') ||
+                   texto.includes('pegar promoção')
+            ) {
+                linkML = href;
+            }
         });
+
+            return { precoAtual, precoAntigo, ehMercadoLivre, linkML };
+    });
 
         await novaPagina.close();
 
         return dados;
     } catch (err) {
         console.log('Erro ao pegar detalhes:', err.message);
-        return { precoAtual: '', precoAntigo: '', ehMercadoLivre: false };
+        return { precoAtual: '', precoAntigo: '', ehMercadoLivre: false, linkML: '' };
     } 
 }
 
@@ -283,7 +300,8 @@ client.on('ready', async () => {
 
          if (!enviados.has(idUnico)) {
              const detalhes = await pegarDetalhesPromo(promo.link);
-                if (!detalhes.ehMercadoLivre) {
+                if (!detalhes.linkML) {
+                    console.log('Promo ignorada: não é link final do Mercado Livre');
                     continue;
                 }
                 
@@ -336,7 +354,7 @@ ${detalhes.precoAtual ? `Por ${detalhes.precoAtual} ✅` : '💸 Preço abaixo d
 
 ⚡ Corre que pode acabar
 
-🔗 ${promo.link}`;
+🔗 ${detalhes.linkML}`;
                 }
 
                 await client.sendMessage(grupoId, mensagem);
