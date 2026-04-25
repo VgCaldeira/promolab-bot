@@ -299,11 +299,14 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
          if (!enviados.has(idUnico)) {
-             const detalhes = await pegarDetalhesPromo(promo.link);
-                if (!detalhes.linkML) {
-                    console.log('Promo ignorada: não é link final do Mercado Livre');
-                    continue;
-                }
+             const resultadosML = await buscarProdutosML(promo.titulo);
+
+             if (!resultadosML.length) {
+                console.log('Nenhum resultado no ML');
+                continue;
+             }
+
+             const produtoML = resultadosML[0];
                 
                 let destaque = '🔥 OFERTA INSANA';
 
@@ -354,7 +357,7 @@ ${detalhes.precoAtual ? `Por ${detalhes.precoAtual} ✅` : '💸 Preço abaixo d
 
 ⚡ Corre que pode acabar
 
-🔗 ${detalhes.linkML}`;
+🔗 ${produtoML.linkML}`;
                 }
 
                 await client.sendMessage(grupoId, mensagem);
