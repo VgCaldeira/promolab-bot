@@ -1,5 +1,8 @@
 require('dotenv').config();
 
+const fs = require('fs');
+const linkAfiliados = require('./links-afiliados.json');
+
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
@@ -55,6 +58,49 @@ const buscasML = [
     'perfume masculino',
     'organizador cozinha'
 ];
+
+function extrairIdProdutoML(link) {
+    const match = link.match(/(MLB\d+)/);
+    return match ? match[1] : null;
+}
+
+function salvarPendenteAfiliado(produto) {
+    try {
+        const pendentes = JSON.parse(fs.readFileSync('./pendentes-afiliado.json', 'utf-8'));
+
+        const jaExiste = pendentes.some(item => item.id === produto.id);
+
+        if (!jaExiste) {
+            pendentes.push(produto);
+            fs.writeFileSync('./pendentes-afiliado.json', JSON.stringify(pendentes, null, 2));
+            console.log('💾 Produto salvo em pendentes:', produto.id);
+        }
+    } catch (err) {
+        console.log('Erro ao salvat pendente', err.message);
+    }
+}
+
+function obterLinkFinal(produtoML) {
+    const idProduto = extrairIdProdutoML(produtoML.link);
+
+    if (!idProduto) {
+        return produtoML.link;
+    }
+
+    const linkAfiliado = linkAfiliados[idProduto];
+
+    if (linkAfiliado) {
+        return linkAfiliado;
+    }
+
+    salvarPendenteAfiliado({
+        id: idProduto,
+        titulo: produtoML.titulo,
+        link: produtoML.link
+    });
+
+    return produtoML.link;
+}
 
 client.on('qr', qr => {
     qrcode.generate(qr, { small: true });
@@ -307,6 +353,7 @@ client.on('ready', async () => {
              }
 
              const produtoML = resultadosML[0];
+             const linkFinal = obterLinkFinal(produtoML);
                 
                 let destaque = '🔥 OFERTA INSANA';
 
@@ -356,7 +403,7 @@ ${promo.titulo}
 
 ⚡ Corre que pode acabar
 
-🔗 ${produtoML.link}`;
+🔗 ${linkFinal}`;
                 }
 
                 await client.sendMessage(grupoId, mensagem);
