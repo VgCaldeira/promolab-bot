@@ -3,6 +3,16 @@ require('dotenv').config();
 const fs = require('fs');
 const linkAfiliados = require('./links-afiliados.json');
 
+function gerarLinkAmazon(url) {
+    try {
+        const u = new URL(url);
+        u.searchParams.set('tag', process.env.AMAZON_TAG);
+        return u.toString();
+    } catch {
+        return url;
+    }
+}
+
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
@@ -58,6 +68,53 @@ const buscasML = [
     'perfume masculino',
     'organizador cozinha'
 ];
+
+async function buscarProdutosAmazon(page, termoBusca) {
+    try {
+        const termo = termoBusca
+        .replace(/[^\w\sÀ-ú]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 60);
+
+        console.log('🔍 Buscando na Amazon:', termo);
+
+        const url = `https://www.amazon.com.br/s?k=${encodeURIComponent(termo)}`;
+        
+        await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
+
+        await page.waitForSelector('[data-asin', {timeout: 10000 });
+
+        const produto = await page.evaluate(() => {
+            const cards = [...document.querySelectorAll('[data-asin]')]
+            .filter(el => el.dataset.asin && el.dataset.asin.length > 0);
+
+            for (const card of cards) {
+                const asin = card.dataset.asin;
+                const titulo = card.querySelector('h2 span')?.innerText?.trim();
+                const preco = card.querySelector('.a-price .a-offscreen')?.innerText?.trim();
+
+                if (titulo && preco && asin) {
+                    return {
+                        asin, 
+                        titulo,
+                        preco,
+                        link: `https://www.amazon.com.br/dp/${asin}`
+                    };
+                }
+            }
+            return null,
+        });
+
+        if (!produto) return null;
+
+        produto.link = gerarLinkAmazon(produto.link);
+        return produto;
+    } catch (err) {
+        console.log('❌ Erro ao buscar na Amazon:', err.message);
+        return null;
+    }
+}
 
 function extrairIdProdutoML(link) {
     const match = link.match(/(MLB\d+)/);
