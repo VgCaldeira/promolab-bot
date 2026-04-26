@@ -352,12 +352,11 @@ ${copy}
 
 ${promo.titulo}
 
-${detalhes.precoAntigo ? `De ${detalhes.precoAntigo} ❌` : ''}
-${detalhes.precoAtual ? `Por ${detalhes.precoAtual} ✅` : '💸 Preço abaixo do normal'}
+💸 Preço abaixo do normal
 
 ⚡ Corre que pode acabar
 
-🔗 ${produtoML.linkML}`;
+🔗 ${produtoML.link}`;
                 }
 
                 await client.sendMessage(grupoId, mensagem);
