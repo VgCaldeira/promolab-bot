@@ -103,7 +103,7 @@ async function buscarProdutosAmazon(page, termoBusca) {
                     };
                 }
             }
-            return null,
+            return null;
         });
 
         if (!produto) return null;
@@ -402,15 +402,14 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
          if (!enviados.has(idUnico)) {
-             const resultadosML = await buscarProdutosML(promo.titulo);
+                const produtoAmazon = await buscarProdutosAmazon(page, promo.titulo);
 
-             if (!resultadosML.length) {
-                console.log('Nenhum resultado no ML');
-                continue;
-             }
+                if (!produtosAmazon) {
+                    console.log('❌ Nenhum resultado na Amazon');
+                    continue;
+                }
 
-             const produtoML = resultadosML[0];
-             const linkFinal = obterLinkFinal(produtoML);
+                const linkFinal = produtoAmazon.link;
                 
                 let destaque = '🔥 OFERTA INSANA';
 
