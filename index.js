@@ -455,7 +455,7 @@ ${copy}
 
 ${promo.titulo}
 
-💸 Preço abaixo do normal
+💸 Por apenas ${produtoAmazon.preco}
 
 ⚡ Corre que pode acabar
 
