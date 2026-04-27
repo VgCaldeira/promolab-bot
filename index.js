@@ -464,7 +464,9 @@ ${promo.titulo}
 🔗 ${linkFinal}`;
                 }
 
-                if (produtoAmazon.imagem) {
+                const temImagem = produtoAmazon.imagem && produtoAmazon.imagem.startsWith('http');
+
+                if (temImagem) {
                     await telegramBot.sendPhoto(TELEGRAM_CHAT_ID, produtoAmazon.imagem, {
                         caption: mensagem
                     });
