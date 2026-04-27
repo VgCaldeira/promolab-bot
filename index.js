@@ -403,6 +403,24 @@ client.on('ready', async () => {
         for (let promo of promos.reverse()) {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
+            promo.titulo = promo.titulo
+                .replace(/\[.*?\]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+
+            const tituloInvalido =
+                promo.titulo.toLowerCase().includes('cupom') ||
+                promo.titulo.toLowerCase().includes('desconto exclusivo') ||
+                promo.titulo.toLowerCase().includes('promoção') ||
+                promo.titulo.toLowerCase().includes('oferta por tempo') ||
+                promo.titulo.length < 15;
+            
+            if (tituloInvalido) {
+                console.log('⏭️ Ignorando promo genérica:', promo.titulo.slice(0, 40));
+                enviados.add(idUnico);
+                continue;
+            }
+
          if (!enviados.has(idUnico)) {
                 const produtoAmazon = await buscarProdutoAmazon(page, promo.titulo);
 
@@ -464,23 +482,11 @@ ${promo.titulo}
 🔗 ${linkFinal}`;
                 }
 
-                const temImagem = produtoAmazon.imagem && produtoAmazon.imagem.startsWith('http');
-
-                if (temImagem) {
-                    await telegramBot.sendPhoto(TELEGRAM_CHAT_ID, produtoAmazon.imagem, {
-                        caption: mensagem
-                    });
-                } else {
-                    await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
-                }
+                await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem, {
+                    disable_web_page_preview: false
+                });
 
                 await client.sendMessage(grupoId, mensagem);
-
-                try {
-                    await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
-                } catch (err) {
-                    console.log('Erro Telegram:', err.message);
-                }
 
                 enviados.add(idUnico);
 
