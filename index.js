@@ -71,7 +71,8 @@ const buscasML = [
 
 async function pegarImagemProduto(page, linkProduto) {
     try {
-        await page.goto(linkProduto, { waitUntil: 'networkidle2', timeout: 20000});
+        const urlLimpa =  linkProduto.split('?')[0];
+        await page.goto(urlLimpa, { waitUntil: 'networkidle2', timeout: 20000});
 
         const imagem = await page.evaluate(() => {
             const img =
@@ -83,8 +84,20 @@ async function pegarImagemProduto(page, linkProduto) {
 
             const dados = img.getAttribute('data-a-dynamic-image');
             if (dados) {
-                const urls = Object.keys(JSON.parse(dados));
-                return urls[0];
+                try {
+                    const urls = Object.keys(JSON.parse(dados));
+                    const melhorUrl = urls.reduce((melhor, url) => {
+                        const match = url.match(/_(\d+)x(\d+)_/);
+                        if (!match) return melhor;
+                        const area = parseInt(match[1]) * parseInt(match[2]);
+                        if (!melhorMatch) return url;
+                        const melhorArea = parseInt(melhorMatch[1]) * parseInt(melhorMatch[2]);
+                        return area > melhorArea ? url : melhor;
+                    }, urls[0]);
+                    return melhorUrl;
+                } catch {
+                    return urls[0];
+                }
             }
 
             return img.src || null;
@@ -433,14 +446,15 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
             promo.titulo = promo.titulo
-                .replace(/\[.*?\]/g, '')
-                .replace(/\s+/g, ' ')
-                .trim();
+                 .replace(/\[.*?\]/g, '')   
+                 .replace(/\(.*?\)/g, '')   
+                 .replace(/\s+/g, ' ')
+                 .trim();
 
             const tituloInvalido =
                 promo.titulo.toLowerCase().includes('cupom') ||
                 promo.titulo.toLowerCase().includes('desconto exclusivo') ||
-                promo.titulo.toLowerCase().includes('promoção') ||
+                promo.titulo.toLowerCase().includes('código') ||
                 promo.titulo.toLowerCase().includes('oferta por tempo') ||
                 promo.titulo.length < 15;
             
