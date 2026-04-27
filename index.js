@@ -13,7 +13,7 @@ function gerarLinkAmazon(url) {
     }
 }
 
-const { Client, LocalAuth } = require('whatsapp-web.js');
+const { Client, LocalAuth, MessageMedia } = require('whatsapp-web.js');
 const qrcode = require('qrcode-terminal');
 const cron = require('node-cron');
 const puppeteer = require('puppeteer');
@@ -524,7 +524,12 @@ ${promo.titulo}
                     });
                 }
 
+            if (imagemProduto) {
+                const media = await MessageMedia.fromUrl(imagemProduto);
+                await client.sendMessage(grupoId, media, { caption: mensagem });
+            } else {
                 await client.sendMessage(grupoId, mensagem);
+            }
 
                 enviados.add(idUnico);
 
