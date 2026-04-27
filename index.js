@@ -69,6 +69,34 @@ const buscasML = [
     'organizador cozinha'
 ];
 
+async function pegarImagemProduto(page, linkProduto) {
+    try {
+        await page.goto(linkProduto, { waitUntil: 'networkidle2', timeout: 20000});
+
+        const imagem = await page.evaluate(() => {
+            const img =
+                document.querySelector('#landingImage') ||
+                document.querySelector('#imgBlkFront') ||
+                document.querySelector('.a-dynamic-image');
+
+            if (!img) return null;
+
+            const dados = img.getAttribute('data-a-dynamic-image');
+            if (dados) {
+                const urls = Object.keys(JSON.parse(dados));
+                return urls[0];
+            }
+
+            return img.src || null;
+        });
+
+        return imagem;
+    } catch (err) {
+        console.log('❌ Erro ao pegar imagem:', err.message);
+        return null;
+    }
+}
+
 async function buscarProdutoAmazon(page, termoBusca) {
     try {
         const termo = termoBusca
@@ -93,7 +121,8 @@ async function buscarProdutoAmazon(page, termoBusca) {
                 const asin = card.dataset.asin;
                 const titulo = card.querySelector('h2 span')?.innerText?.trim();
                 const preco = card.querySelector('.a-price .a-offscreen')?.innerText?.trim();
-                const imagem = card.querySelector('img.s-image')?.scroll;
+                const imagem = card.querySelector('img.s-image')?.getAttribute('src') ||
+                            card.querySelector('img.s-image')?.getAttribute('data-src') || '';
 
                 if (titulo && preco && asin) {
                     return {
@@ -430,6 +459,9 @@ client.on('ready', async () => {
                 }
 
                 const linkFinal = produtoAmazon.link;
+
+                const imagemProduto = await pegarImagemProduto(page, linkFinal);
+                console.log('🖼️ Imagem:', imagemProduto ? 'encontrada' : 'não encontrada');
                 
                 let destaque = '🔥 OFERTA INSANA';
 
@@ -469,7 +501,7 @@ client.on('ready', async () => {
 
 ${copy}
 
-👉 ${promo.link}`;
+👉 ${linklink}`;
                 } else {
                     mensagem = `${destaque}
 
@@ -482,9 +514,15 @@ ${promo.titulo}
 🔗 ${linkFinal}`;
                 }
 
-                await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem, {
-                    disable_web_page_preview: true
-                });
+                if (imagemProduto) {
+                    await telegramBot.sendPhoto(TELEGRAM_CHAT_ID, imagemProduto, {
+                        caption: mensagem
+                    });
+                } else {
+                    await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem, {
+                        disable_web_page_preview: false
+                    });
+                }
 
                 await client.sendMessage(grupoId, mensagem);
 
