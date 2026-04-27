@@ -69,7 +69,7 @@ const buscasML = [
     'organizador cozinha'
 ];
 
-async function buscarProdutosAmazon(page, termoBusca) {
+async function buscarProdutoAmazon(page, termoBusca) {
     try {
         const termo = termoBusca
         .replace(/[^\w\sÀ-ú]/g, ' ')
@@ -93,12 +93,14 @@ async function buscarProdutosAmazon(page, termoBusca) {
                 const asin = card.dataset.asin;
                 const titulo = card.querySelector('h2 span')?.innerText?.trim();
                 const preco = card.querySelector('.a-price .a-offscreen')?.innerText?.trim();
+                const imagem = card.querySelector('img.s-image')?.scroll;
 
                 if (titulo && preco && asin) {
                     return {
                         asin, 
                         titulo,
                         preco,
+                        imagem,
                         link: `https://www.amazon.com.br/dp/${asin}`
                     };
                 }
@@ -402,9 +404,9 @@ client.on('ready', async () => {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
 
          if (!enviados.has(idUnico)) {
-                const produtoAmazon = await buscarProdutosAmazon(page, promo.titulo);
+                const produtoAmazon = await buscarProdutoAmazon(page, promo.titulo);
 
-                if (!produtosAmazon) {
+                if (!produtoAmazon) {
                     console.log('❌ Nenhum resultado na Amazon');
                     continue;
                 }
@@ -460,6 +462,14 @@ ${promo.titulo}
 ⚡ Corre que pode acabar
 
 🔗 ${linkFinal}`;
+                }
+
+                if (produtoAmazon.imagem) {
+                    await telegramBot.sendPhoto(TELEGRAM_CHAT_ID, produtoAmazon.imagem, {
+                        caption: mensagem
+                    });
+                } else {
+                    await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem);
                 }
 
                 await client.sendMessage(grupoId, mensagem);
