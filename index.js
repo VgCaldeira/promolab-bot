@@ -483,7 +483,7 @@ ${promo.titulo}
                 }
 
                 await telegramBot.sendMessage(TELEGRAM_CHAT_ID, mensagem, {
-                    disable_web_page_preview: false
+                    disable_web_page_preview: true
                 });
 
                 await client.sendMessage(grupoId, mensagem);
