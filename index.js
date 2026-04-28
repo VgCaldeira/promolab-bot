@@ -72,7 +72,7 @@ const buscasML = [
 async function pegarImagemProduto(page, linkProduto) {
     try {
         const urlLimpa =  linkProduto.split('?')[0];
-        await page.goto(urlLimpa, { waitUntil: 'networkidle2', timeout: 20000});
+        await page.goto(urlLimpa, { waitUntil: 'domcontentloaded', timeout: 30000});
 
         const imagem = await page.evaluate(() => {
             const img =
@@ -103,7 +103,12 @@ async function pegarImagemProduto(page, linkProduto) {
             return img.src || null;
         });
 
-        return imagem;
+        const imagemHD = imagem 
+            ? imagem.replace(/\._[A-Z0-9_,]+_\./g, '.')
+            : null;
+
+        return imagemHD;
+
     } catch (err) {
         console.log('❌ Erro ao pegar imagem:', err.message);
         return null;
@@ -448,13 +453,13 @@ client.on('ready', async () => {
             promo.titulo = promo.titulo
                  .replace(/\[.*?\]/g, '')   
                  .replace(/\(.*?\)/g, '')   
+                 .replace(/^[\W\d\s,./+|-]+/g, '')
                  .replace(/\s+/g, ' ')
                  .trim();
 
             const tituloInvalido =
-                promo.titulo.toLowerCase().includes('cupom') ||
-                promo.titulo.toLowerCase().includes('desconto exclusivo') ||
-                promo.titulo.toLowerCase().includes('código') ||
+                promo.titulo.toLowerCase().startsWith('cupom') ||
+                promo.titulo.toLowerCase().startsWith('código') ||
                 promo.titulo.toLowerCase().includes('oferta por tempo') ||
                 promo.titulo.length < 15;
             
