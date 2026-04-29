@@ -247,19 +247,20 @@ async function buscarProdutosML(termo) {
             const itens = [];
             const vistos = new Set();
 
-            document.querySelectorAll('a').forEach(el => {
-                const titulo = el.querySelector('h2')?.innerText?.trim() || '';
+            document.querySelectorAll('a[href*="/d/"]').forEach(el => {
+                const titulo = el.innerText.trim();
                 const link = el.href;
 
-                if (
-                    titulo &&
-                    titulo.length > 10 &&
-                    link &&
-                    link.includes('MLB-') &&
-                    !vistos.has(link)
-                ) {
+                const container = el.closest('article') || el.parentElement;
+                const textoContainer = container?.innerTex?.toLowerCase() || '';
+
+                const ehAmazon =
+                    textoContainer.includes('amazon') ||
+                    link.toLowerCase().includes('amazon');
+
+                if (titulo && titulo.length > 20 && !vistos.has(link)) {
                     vistos.add(link);
-                    itens.push({ titulo, link });
+                    itens.push({ titulo, link, ehAmazon});
                 }
             });
             
@@ -458,7 +459,7 @@ client.on('ready', async () => {
                  .replace(/\s+/g, ' ')
                  .trim();
 
-            const tituloInvalido = promo.titulo.length < 15;
+            const tituloInvalido = promo.titulo.length < 15 || !promo.ehAmazon;
             
             if (tituloInvalido) {
                 console.log('⏭️ Ignorando promo genérica:', promo.titulo.slice(0, 40));
