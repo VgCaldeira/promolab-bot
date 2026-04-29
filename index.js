@@ -90,6 +90,7 @@ async function pegarImagemProduto(page, linkProduto) {
                         const match = url.match(/_(\d+)x(\d+)_/);
                         if (!match) return melhor;
                         const area = parseInt(match[1]) * parseInt(match[2]);
+                        const melhorMatch = melhor.match(/_(\d+)x(\d+)_/);
                         if (!melhorMatch) return url;
                         const melhorArea = parseInt(melhorMatch[1]) * parseInt(melhorMatch[2]);
                         return area > melhorArea ? url : melhor;
@@ -520,7 +521,7 @@ client.on('ready', async () => {
 
 ${copy}
 
-👉 ${linklink}`;
+👉 ${linkFinal}`;
                 } else {
                     mensagem = `${destaque}
 
