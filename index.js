@@ -458,11 +458,7 @@ client.on('ready', async () => {
                  .replace(/\s+/g, ' ')
                  .trim();
 
-            const tituloInvalido =
-                promo.titulo.toLowerCase().startsWith('cupom') ||
-                promo.titulo.toLowerCase().startsWith('código') ||
-                promo.titulo.toLowerCase().includes('oferta por tempo') ||
-                promo.titulo.length < 15;
+            const tituloInvalido = promo.titulo.length < 15;
             
             if (tituloInvalido) {
                 console.log('⏭️ Ignorando promo genérica:', promo.titulo.slice(0, 40));
