@@ -40,7 +40,16 @@ const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
         headless: true,
-        args: ['--no-sandbox']
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-accelerated-2d-canvas',
+            '--no-first-run',
+            '--no-zygote',
+            '--disable-gpu'
+        ],
+        protocolTimeout: 120000
     }
 });
 
@@ -97,7 +106,7 @@ async function pegarImagemProduto(page, linkProduto) {
                     }, urls[0]);
                     return melhorUrl;
                 } catch {
-                    return urls[0];
+                    return null;
                 }
             }
 
@@ -130,10 +139,10 @@ async function buscarProdutoAmazon(page, termoBusca) {
         
         await page.goto(url, { waitUntil: 'networkidle2', timeout: 20000 });
 
-        await page.waitForSelector('[data-asin', {timeout: 10000 });
+        await page.waitForSelector('[data-asin]', { timeout: 10000 });
 
         const produto = await page.evaluate(() => {
-            const cards = [...document.querySelectorAll('[data-asin]')]
+            const cards = [...document.querySelectorAll('[data-component-type="s-search-result"]')]
             .filter(el => el.dataset.asin && el.dataset.asin.length > 0);
 
             for (const card of cards) {
