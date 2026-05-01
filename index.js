@@ -231,49 +231,6 @@ function escolherBuscaML() {
     return buscasML[indice];
 }
 
-async function buscarProdutosML(termo) {
-    try {
-        if (!page) return [];
-
-        const url = `https://lista.mercadolivre.com.br/${encodeURIComponent(termo)}`;
-
-        await page.goto(url, {
-            waitUntil: 'networkidle2'
-        });
-
-        await page.waitForSelector('a[href*="mercadolivre.com.br"]', { timeout: 15000 });
-
-        const produtos = await page.evaluate(() => {
-            const itens = [];
-            const vistos = new Set();
-
-            document.querySelectorAll('a[href*="/d/"]').forEach(el => {
-                const titulo = el.innerText.trim();
-                const link = el.href;
-
-                const container = el.closest('article') || el.parentElement;
-                const textoContainer = container?.innerTex?.toLowerCase() || '';
-
-                const ehAmazon =
-                    textoContainer.includes('amazon') ||
-                    link.toLowerCase().includes('amazon');
-
-                if (titulo && titulo.length > 20 && !vistos.has(link)) {
-                    vistos.add(link);
-                    itens.push({ titulo, link, ehAmazon});
-                }
-            });
-            
-            return itens.slice(0, 20);
-        });
-
-            return produtos;
-        } catch (err) {
-            console.log('Erro ao buscar produtos no ML:', err.message);
-            return [];
-        }
-    }
-
 async function pegarPromocoes() {
     try {
         if (!page) return [];
@@ -459,7 +416,7 @@ client.on('ready', async () => {
                  .replace(/\s+/g, ' ')
                  .trim();
 
-            const tituloInvalido = promo.titulo.length < 15 || !promo.ehAmazon;
+            const tituloInvalido = promo.titulo.length < 15;
             
             if (tituloInvalido) {
                 console.log('⏭️ Ignorando promo genérica:', promo.titulo.slice(0, 40));
