@@ -225,7 +225,12 @@ client.on('qr', qr => {
 async function iniciarScraper() {
     browser = await puppeteer.launch({
         headless: true,
-        args: ['--no-sandbox'],
+        args: [
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gru'
+        ],
     });
 
     page = await browser.newPage();
