@@ -272,8 +272,12 @@ async function pegarPromocoes() {
             document.querySelectorAll('a[href*="/d/"]').forEach(el => {
                 const titulo = el.innerText.trim();
                 const link = el.href;
+
+                const card = el.closest('article') || el.parentElement?.parentElement;
+                const textoCard = card?.innerText?.toLowerCase() || '';
+                const ehAmazon = textoCard.includes('Vendido por amazon') || textoCard.includes('amazon');
                
-                if ( titulo && titulo.length > 20 && !vistos.has(link)) {
+                if ( titulo && titulo.length > 20 && !vistos.has(link) && ehAmazon) {
                     vistos.add(link);
                     itens.push({ titulo, link });
                 }
