@@ -60,6 +60,14 @@ const enviados = new Set();
 let browser;
 let page;
 
+async function novaAba() {
+    const aba = await browser.newPage();
+    await aba.setUserAgent(
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
+    );
+    return aba;
+}
+
 let chamadasIA = 0;
 const LIMITE_IA = 10;
 
@@ -415,7 +423,10 @@ client.on('ready', async () => {
 
         contadorExecucoes++;
 
+        page = await novaAba();
         const promos = await pegarPromocoes();
+        await page.close();
+        page = await novaAba();
         console.log('Encontradas:', promos.length);
 
         if (!promos.length) return;
