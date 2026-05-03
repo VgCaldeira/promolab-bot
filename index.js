@@ -500,6 +500,8 @@ client.on('ready', async () => {
 
 ${copy}
 
+💸 Por apenas ${produtoAmazon.preco}
+
 👉 ${linkFinal}`;
                 } else {
                     mensagem = `${destaque}
