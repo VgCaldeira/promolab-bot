@@ -279,7 +279,7 @@ async function pegarPromocoesPromobit() {
 
                 if (titulo.length > 10) {
                     vistos.add(href);
-                    itens.push({ titulo, link: href });
+                    itens.push({ titulo, link: href, fonte: 'Promobit' });
                 }
             });
 
@@ -327,7 +327,7 @@ async function pegarPromocoes() {
                
                 if (titulo.length > 10 && !vistos.has(link) && ehAmazon) {
                     vistos.add(link);
-                    itens.push({ titulo, link });
+                    itens.push({ titulo, link, fonte: 'Pelando' });
                 }
             });
 
@@ -598,7 +598,7 @@ ${promo.titulo}
                     enviados.clear();
                 }
 
-                console.log('🆕 Nova promo enviada!');
+                console.log(`🆕 Nova promo enviada! [${promo.fonte || 'Desconhecida'}]`);
                 break;
             }
         }
