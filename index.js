@@ -237,7 +237,7 @@ async function iniciarScraper() {
             '--no-sandbox',
             '--disable-setuid-sandbox',
             '--disable-dev-shm-usage',
-            '--disable-gru'
+            '--disable-gpu'
         ],
     });
 
@@ -251,6 +251,49 @@ async function iniciarScraper() {
 function escolherBuscaML() {
     const indice = Math.floor(Math.random() * buscasML.length);
     return buscasML[indice];
+}
+
+async function pegarPromocoesPromobit() {
+    try {
+        const aba = await novaAba();
+
+        await aba.goto('https://www.promobit.com.br/', {
+            waitUntil: 'networkidle2',
+            timeout: 30000
+        });
+
+        await new Promise(r => setTimeout(r, 5000));
+
+        const promocoes = await aba.evaluate (() => {
+            const itens = [];
+            const vistos = new Set();
+
+            document.querySelectorAll('a').forEach(el => {
+                const href = el.href;
+                if (!href.includes('/oferta/') || vistos.has(href)) return;
+
+                const textoCompleto = el.innerText.trim();
+                const linhas = textoCompleto.split('\n').map(l => l.trim()).filter(Boolean);
+
+                const ehAmazon = linhas.some(l => l.toLowerCase().includes('amazon'));
+                const titulo = linhas.reduce((a, b) => a.length > b.length ? a : b, '');
+
+                if (titulo.length > 10 && ehAmazon) {
+                    vistos.add(href);
+                    itens.push({ titulo, link: href });
+                }
+            });
+
+            return itens;
+        });
+
+        await aba.close();
+        return promocoes;
+
+    } catch (err) {
+        console.log('Erro Promobit:', err.message);
+        return [];
+    }
 }
 
 async function pegarPromocoes() {
@@ -273,7 +316,7 @@ async function pegarPromocoes() {
                 const titulo = el.getAttribute('aria-label');
                 const link = el.href;
 
-                if (!titulo || titulo  === 'Ver promoção' || !link.includes('#')) return;
+                if (!titulo || titulo  === 'Ver promoção' || !link.includes('/d/') || link.includes('#')) return;
 
                 let container = el;
                 for (let i = 0; i < 3; i++) {
@@ -434,10 +477,17 @@ client.on('ready', async () => {
         contadorExecucoes++;
 
         page = await novaAba();
-        const promos = await pegarPromocoes();
+
+        const [promosPelando, promosPromobit] = await Promise.all([
+            pegarPromocoes(),
+            pegarPromocoesPromobit()
+        ]); 
+
         await page.close();
         page = await novaAba();
-        console.log('Encontradas:', promos.length);
+
+        const promos = [...promosPelando, ...promosPromobit];
+        console.log(`Encontradas: ${promosPelando.length} Pelando + ${promosPromobit.length} Promobit = ${promos.length} total`);
 
         if (!promos.length) return;
 
