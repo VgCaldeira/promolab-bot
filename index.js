@@ -475,6 +475,11 @@ client.on('ready', async () => {
 
         contadorExecucoes++;
 
+        if (chamadasIA >= LIMITE_IA) {
+            chamadasIA = 0 
+            console.log('Limite de IA resetado');
+        }
+
         page = await novaAba();
 
         const [promosPelando, promosPromobit] = await Promise.all([
@@ -489,6 +494,8 @@ client.on('ready', async () => {
         console.log(`Encontradas: ${promosPelando.length} Pelando + ${promosPromobit.length} Promobit = ${promos.length} total`);
 
         if (!promos.length) return;
+
+        let enviadosNoCiclo = 0
 
         for (let promo of promos.reverse()) {
             const idUnico = promo.link.split('/d/')[1]?.split('?')[0];
@@ -518,8 +525,8 @@ client.on('ready', async () => {
 
                 const linkFinal = produtoAmazon.link;
 
-                const imagemProduto = await pegarImagemProduto(page, linkFinal);
-                console.log('🖼️ Imagem:', imagemProduto ? 'encontrada' : 'não encontrada');
+                const imagemProduto = produtoAmazon.imagem || null;
+                console.log('🖼️ Imagem Amazon:', imagemProduto ? 'encontrada' : 'não encontrada');
                 
                 let destaque = '🔥 OFERTA INSANA';
 
@@ -599,7 +606,14 @@ ${promo.titulo}
                 }
 
                 console.log(`🆕 Nova promo enviada! [${promo.fonte || 'Desconhecida'}]`);
-                break;
+                
+                enviadosNoCiclo++;
+
+                if (enviados >= 3) {
+                    console.log('✅ Limite de 3 promoções enviadas neste ciclo.');
+                    break;
+                }
+
             }
         }
      } finally {
