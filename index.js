@@ -55,7 +55,7 @@ const client = new Client({
 
 const grupoId = '120363421936203640@g.us';
 
-const enviados = new Set();
+const cacheAmazon = new Map();
 
 let browser;
 let page;
@@ -135,6 +135,12 @@ async function pegarImagemProduto(page, linkProduto) {
 
 async function buscarProdutoAmazon(page, termoBusca) {
     try {
+
+        if (cacheAmazon.has(termoBusca)) {
+            console.log('Produto vindo do cache:', termoBusca);
+            return cacheAmazon.get(termoBusca);
+        }
+
         const termo = termoBusca
         .replace(/[^\w\sÀ-ú]/g, ' ')
         .replace(/\s+/g, ' ')
@@ -176,6 +182,9 @@ async function buscarProdutoAmazon(page, termoBusca) {
         if (!produto) return null;
 
         produto.link = gerarLinkAmazon(produto.link);
+
+        cacheAmazon.set(termoBusca, produto);
+        
         return produto;
     } catch (err) {
         console.log('❌ Erro ao buscar na Amazon:', err.message);
