@@ -269,15 +269,21 @@ async function pegarPromocoes() {
             const itens = [];
             const vistos = new Set();
 
-            document.querySelectorAll('a[href*="/d/"]').forEach(el => {
-                const titulo = el.innerText.trim();
+            document.querySelectorAll('a').forEach(el => {
+                const titulo = el.getAttribute('aria-label');
                 const link = el.href;
 
-                const card = el.closest('article') || el.parentElement?.parentElement;
-                const textoCard = card?.innerText?.toLowerCase() || '';
-                const ehAmazon = textoCard.includes('Vendido por amazon') || textoCard.includes('amazon');
+                if (!titulo || titulo  === 'Ver promoção' || !link.includes('#')) return;
+
+                let container = el;
+                for (let i = 0; i < 3; i++) {
+                    container = container?.parentElement;
+                }
+
+                const textoConteiner = container?.innerText?.toLowerCase() || '';
+                const ehAmazon = textoConteiner.includes('amazon');
                
-                if ( titulo && titulo.length > 20 && !vistos.has(link) && ehAmazon) {
+                if (titulo.length > 10 && !vistos.has(link) && ehAmazon) {
                     vistos.add(link);
                     itens.push({ titulo, link });
                 }
