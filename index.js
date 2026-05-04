@@ -257,7 +257,7 @@ async function pegarPromocoesPromobit() {
     try {
         const aba = await novaAba();
 
-        await aba.goto('https://www.promobit.com.br/', {
+        await aba.goto('https://www.promobit.com.br/promocoes/loja/amazon/', {
             waitUntil: 'networkidle2',
             timeout: 30000
         });
@@ -275,10 +275,9 @@ async function pegarPromocoesPromobit() {
                 const textoCompleto = el.innerText.trim();
                 const linhas = textoCompleto.split('\n').map(l => l.trim()).filter(Boolean);
 
-                const ehAmazon = linhas.some(l => l.toLowerCase().includes('amazon'));
                 const titulo = linhas.reduce((a, b) => a.length > b.length ? a : b, '');
 
-                if (titulo.length > 10 && ehAmazon) {
+                if (titulo.length > 10) {
                     vistos.add(href);
                     itens.push({ titulo, link: href });
                 }
