@@ -1,8 +1,5 @@
 require('dotenv').config();
 
-const fs = require('fs');
-const linkAfiliados = require('./links-afiliados.json');
-
 function gerarLinkAmazon(url) {
     try {
         const u = new URL(url);
@@ -75,16 +72,6 @@ let contadorExecucoes = 0;
 
 let cronIniciado = false;
 let buscandoPromocoes = false;
-
-const buscasML = [
-    'air fryer',
-    'cafeteira',
-    'kit ferramenta',
-    'suporte celular carro',
-    'fone bluetooth',
-    'perfume masculino',
-    'organizador cozinha'
-];
 
 async function pegarImagemProduto(page, linkProduto) {
     try {
@@ -184,55 +171,12 @@ async function buscarProdutoAmazon(page, termoBusca) {
         produto.link = gerarLinkAmazon(produto.link);
 
         cacheAmazon.set(termoBusca, produto);
-        
+
         return produto;
     } catch (err) {
         console.log('❌ Erro ao buscar na Amazon:', err.message);
         return null;
     }
-}
-
-function extrairIdProdutoML(link) {
-    const match = link.match(/(MLB\d+)/);
-    return match ? match[1] : null;
-}
-
-function salvarPendenteAfiliado(produto) {
-    try {
-        const pendentes = JSON.parse(fs.readFileSync('./pendentes-afiliado.json', 'utf-8'));
-
-        const jaExiste = pendentes.some(item => item.id === produto.id);
-
-        if (!jaExiste) {
-            pendentes.push(produto);
-            fs.writeFileSync('./pendentes-afiliado.json', JSON.stringify(pendentes, null, 2));
-            console.log('💾 Produto salvo em pendentes:', produto.id);
-        }
-    } catch (err) {
-        console.log('Erro ao salvat pendente', err.message);
-    }
-}
-
-function obterLinkFinal(produtoML) {
-    const idProduto = extrairIdProdutoML(produtoML.link);
-
-    if (!idProduto) {
-        return produtoML.link;
-    }
-
-    const linkAfiliado = linkAfiliados[idProduto];
-
-    if (linkAfiliado) {
-        return linkAfiliado;
-    }
-
-    salvarPendenteAfiliado({
-        id: idProduto,
-        titulo: produtoML.titulo,
-        link: produtoML.link
-    });
-
-    return produtoML.link;
 }
 
 client.on('qr', qr => {
@@ -255,11 +199,6 @@ async function iniciarScraper() {
     await page.setUserAgent(
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
     );
-}
-
-function escolherBuscaML() {
-    const indice = Math.floor(Math.random() * buscasML.length);
-    return buscasML[indice];
 }
 
 async function pegarPromocoesPromobit() {
@@ -618,7 +557,7 @@ ${promo.titulo}
                 
                 enviadosNoCiclo++;
 
-                if (enviados >= 3) {
+                if (enviadosNoCiclo >= 3) {
                     console.log('✅ Limite de 3 promoções enviadas neste ciclo.');
                     break;
                 }
