@@ -52,6 +52,7 @@ const client = new Client({
 
 const grupoId = '120363421936203640@g.us';
 
+const enviados = new Set();
 const cacheAmazon = new Map();
 
 let browser;
