@@ -25,9 +25,13 @@ const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
 const Groq = require('groq-sdk');
 
-const groq = new Groq({
-    apiKey: process.env.GROQ_API_KEY
-});
+let groq = null;
+
+if (process.env.GROQ_API_KEY) {
+    groq = new Groq({
+        apiKey: process.env.GROQ_API_KEY
+    });
+}
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -345,8 +349,12 @@ async function pegarDetalhesPromo(link) {
 }
 
 async function gerarCopy(titulo) {
+    if (!groq) {
+        return `${titulo}\n\n⚡ Corre que pode acabar rápido!`;
+    }
+
     try { 
-        const resposta = await groq.chat.completetions.cacheAmazon({
+        const resposta = await groq.chat.completions.create({
             model: 'llama3-8b-8192',
             max_tokens: 120,
             messages: [
@@ -491,28 +499,15 @@ client.on('ready', async () => {
 
                 let mensagem;
 
-                if (usarIA && chamadasIA < LIMITE_IA) {
-                    const copy = await gerarCopy(promo.titulo);
-                    chamadasIA++;
+                const copy = await gerarCopy(promo.titulo);
 
-                    mensagem = `${destaque}
+                mensagem = `${destaque}
 
 ${copy}
 
 💸 Por apenas ${produtoAmazon.preco}
 
-👉 ${linkFinal}`;
-                } else {
-                    mensagem = `${destaque}
-
-${promo.titulo}
-
-💸 Por apenas ${produtoAmazon.preco}
-
-⚡ Corre que pode acabar
-
 🔗 ${linkFinal}`;
-                }
 
                 if (imagemProduto) {
                     await telegramBot.sendPhoto(TELEGRAM_CHAT_ID, imagemProduto, {
