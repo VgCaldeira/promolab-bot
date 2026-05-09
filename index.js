@@ -23,15 +23,11 @@ const telegramBot = new TelegramBot(process.env.TELEGRAM_TOKEN, {
 
 const TELEGRAM_CHAT_ID = process.env.TELEGRAM_CHAT_ID;
 
-let openai = null;
+const Groq = require('groq-sdk');
 
-if (process.env.USE_OPENAI === 'true') {
-    const OpenAI = require('openai');
-
-    openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY
-    });
-}
+const groq = new Groq({
+    apiKey: process.env.GROQ_API_KEY
+});
 
 const client = new Client({
     authStrategy: new LocalAuth(),
@@ -349,35 +345,33 @@ async function pegarDetalhesPromo(link) {
 }
 
 async function gerarCopy(titulo) {
-    if (!openai) {
-        return `🔥 ${titulo}\n\n⚡ CORRE! preço pode subir a qualquer momento`
-    }
-
-    try {
-        const resposta = await openai.chat.completions.create({
-            model: 'gpt-4.1-mini',
+    try { 
+        const resposta = await groq.chat.completetions.cacheAmazon({
+            model: 'llama3-8b-8192',
+            max_tokens: 120,
             messages: [
                 {
                     role: 'user',
                     content: `Crie uma mensagem curta, persuasiva e com gatilho de urgência para WhatsApp.
-
+                    
 Produto: ${titulo}
 
 Formato:
-- 1 headline chamativa
+- 1 Headline chamativa
 - 1 benefício claro
-- 1 urgência
+- 1 gatilho de urgência
 
-Sem texto longo.`
+Responda em portugês do brasil 
+Sem texto longo, quero algo direto e impactante.`
                 }
             ]
         });
 
-        return resposta.choices[0].message.content;
+        return resposta.choices[0].message.content.trim();
 
     } catch (err) {
-        console.log('Erro OpenAI:', err.message);
-        return `🔥 ${titulo}\n\n⚡ Corre que pode acabar rápido`;
+        console.log('❌ Erro Groq:', err.message);
+        return `${titulo}\n\n⚡ Corre que pode acabar rápido!`;
     }
 }
 
@@ -481,17 +475,7 @@ client.on('ready', async () => {
 
                 const titulo = (promo.titulo || '').toLowerCase();
 
-                let usarIA = false;
-
-                if (
-                    titulo.includes('iphone') ||
-                    titulo.includes('rtx') ||
-                    titulo.includes('notebook') ||
-                    titulo.includes('tv') ||
-                    titulo.includes('air fryer')
-                ) {
-                    usarIA = true;
-                }
+                let usarIA = true;
 
                 if (titulo.includes('iphone')) {
                     destaque = '📱 PROMO DE IPHONE';
