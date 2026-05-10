@@ -360,22 +360,23 @@ async function gerarCopy(titulo) {
             messages: [
                 {
                     role: 'user',
-                    content: `Crie uma mensagem curta, persuasiva e com gatilho de urgência para WhatsApp.
-                    
+                    content: `Crie uma mensagem de 2-3 linhas para grupo de WhatsApp de ofertas.
+
 Produto: ${titulo}
 
-Formato:
-- 1 Headline chamativa
-- 1 benefício claro
-- 1 gatilho de urgência
-
-Responda em portugês do brasil 
-Sem texto longo, quero algo direto e impactante.`
+Regras:
+- Sem inventar prazos ou condições que não conhece
+- Sem aspas no início ou fim
+- Linguagem informal e animada
+- Máximo 3 linhas
+- Em português brasileiro`
                 }
             ]
         });
 
-        return resposta.choices[0].message.content.trim();
+        return resposta.choices[0].message.content
+            .trim()
+            .replace(/^["']|["']$/g, '');
 
     } catch (err) {
         console.log('❌ Erro Groq:', err.message);
