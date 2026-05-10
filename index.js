@@ -360,15 +360,18 @@ async function gerarCopy(titulo) {
             messages: [
                 {
                     role: 'user',
-                    content: `Crie uma mensagem de 2-3 linhas para grupo de WhatsApp de ofertas.
+                    content: `Você é um especialista em copywriting para grupos de WhatsApp de ofertas.
 
 Produto: ${titulo}
 
+Escreva exatamente 2 linhas:
+1. Uma frase de impacto sobre o produto
+2. Uma frase de urgência simples
+
 Regras:
-- Sem inventar prazos ou condições que não conhece
-- Sem aspas no início ou fim
-- Linguagem informal e animada
-- Máximo 3 linhas
+- Sem aspas
+- Sem inventar preços, prazos ou condições
+- Informal e direto
 - Em português brasileiro`
                 }
             ]
