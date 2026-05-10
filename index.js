@@ -364,12 +364,12 @@ async function gerarCopy(titulo) {
 
 Produto: ${titulo}
 
-Escreva exatamente 2 linhas:
-1. Uma frase de impacto sobre o produto
-2. Uma frase de urgência simples
+Escreva exatamente 2 frases curtas separadas por quebra de linha:
+- Primeira frase: destaque o produto de forma animada
+- Segunda frase: crie urgência simples
 
 Regras:
-- Sem aspas
+- Sem numeração, sem bullets, sem aspas
 - Sem inventar preços, prazos ou condições
 - Informal e direto
 - Em português brasileiro`
