@@ -360,19 +360,20 @@ async function gerarCopy(titulo) {
             messages: [
                 {
                     role: 'user',
-                    content: `Você é um especialista em copywriting para grupos de WhatsApp de ofertas.
+                    content: `Crie uma copy curta para grupo de WhatsApp de ofertas. Máximo 2 linhas.
 
 Produto: ${titulo}
 
-Escreva exatamente 2 frases curtas separadas por quebra de linha:
-- Primeira frase: destaque o produto de forma animada
-- Segunda frase: crie urgência simples
+Exemplo de estilo:
+"BAIXOOUU! 😱❄️ Consul Inverter 12.000 Btus 🧊 Super Econômico 🥳"
 
 Regras:
-- Sem numeração, sem bullets, sem aspas
-- Sem inventar preços, prazos ou condições
-- Informal e direto
-- Em português brasileiro`
+- Use emojis relevantes
+- Seja animado e direto
+- Sem inventar preços ou prazos
+- Máximo 2 linhas curtas
+- Em português brasileiro
+- Sem aspas na resposta`
                 }
             ]
         });
