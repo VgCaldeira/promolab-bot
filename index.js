@@ -380,7 +380,9 @@ Regras:
 
         return resposta.choices[0].message.content
             .trim()
-            .replace(/^["']|["']$/g, '');
+            .replace(/^["']|["']$/g, '')
+            .replace(/\*\*(.*?)\*\*/g, '$1') 
+            .replace(/\*(.*?)\*/g, '$1');
 
     } catch (err) {
         console.log('❌ Erro Groq:', err.message);
