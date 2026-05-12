@@ -485,8 +485,6 @@ client.on('ready', async () => {
 
                 const imagemProduto = produtoAmazon.imagem || null;
                 console.log('🖼️ Imagem Amazon:', imagemProduto ? 'encontrada' : 'não encontrada');
-                
-                let destaque = '🔥 OFERTA INSANA';
 
                 const titulo = (promo.titulo || '').toLowerCase();
 
