@@ -488,20 +488,6 @@ client.on('ready', async () => {
 
                 const titulo = (promo.titulo || '').toLowerCase();
 
-                let usarIA = true;
-
-                if (titulo.includes('iphone')) {
-                    destaque = '📱 PROMO DE IPHONE';
-                } else if (titulo.includes('rtx') || titulo.includes('placa de vídeo')) {
-                    destaque = '🎮 GPU EM PROMOÇÃO';
-                } else if (titulo.includes('notebook')) {
-                    destaque = '💻 NOTEBOOK EM OFERTA';
-                } else if (titulo.includes('tv')) {
-                    destaque = '📺 TV COM DESCONTO';
-                } else if (titulo.includes('air fryer')) {
-                    destaque = '🍟 AIR FRYER EM PROMOÇÃO';
-                }
-
                 let mensagem;
 
                 const copy = await gerarCopy(promo.titulo);
