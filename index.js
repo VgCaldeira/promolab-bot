@@ -290,64 +290,6 @@ async function pegarPromocoes() {
     }
 }
 
-async function pegarDetalhesPromo(link) {
-    try {
-        const novaPagina = await browser.newPage();
-
-        await novaPagina.setUserAgent(
-            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120 Safari/537.36'
-        );
-
-        await novaPagina.goto(link, {
-            waitUntil: 'domcontentloaded'
-        });
-
-        await new Promise(r => setTimeout(r, 2000));
-
-        const dados = await novaPagina.evaluate(() => {
-            const textoOriginal = document.body.innerText || '';
-            const textoPagina = textoOriginal.toLowerCase();
-
-            const precos = textoPagina.match(/R\$\s?\d{1,3}(?:\.\d{3})*,\d{2}/g) || [];
-
-            const precoAtual = (precos[0] || '').replace(/\n/g, ' ');
-            const precoAntigo = (precos[1] || '').replace(/\n/g, ' ');
-
-            const ehMercadoLivre = 
-                textoPagina.includes('mercado livre') ||
-                textoPagina.includes('mercadolivre') ||
-                textoPagina.includes('no ml') ||
-                textoPagina.includes('mercado livre oficial');
-
-            let linkML = '';
-
-            document.querySelectorAll('a').forEach(a => {
-                const href = a.href || '';
-                const texto = (a.innerText || '').toLowerCase();
-
-                if (
-                   href.includes('mercadolivre') ||
-                   href.includes('mercadolibre') ||
-                   texto.includes('ir para loja') ||
-                   texto.includes('ver oferta') ||
-                   texto.includes('pegar promoção')
-            ) {
-                linkML = href;
-            }
-        });
-
-            return { precoAtual, precoAntigo, ehMercadoLivre, linkML };
-    });
-
-        await novaPagina.close();
-
-        return dados;
-    } catch (err) {
-        console.log('Erro ao pegar detalhes:', err.message);
-        return { precoAtual: '', precoAntigo: '', ehMercadoLivre: false, linkML: '' };
-    } 
-}
-
 async function gerarCopy(titulo) {
     if (!groq) {
         return `${titulo}\n\n⚡ Corre que pode acabar rápido!`;
@@ -360,20 +302,19 @@ async function gerarCopy(titulo) {
             messages: [
                 {
                     role: 'user',
-                    content: `Crie uma copy curta para grupo de WhatsApp de ofertas. Máximo 2 linhas.
+                    content: `Crie uma mensagem para grupo de WhatsApp de ofertas.
 
 Produto: ${titulo}
 
-Exemplo de estilo:
-"BAIXOOUU! 😱❄️ Consul Inverter 12.000 Btus 🧊 Super Econômico 🥳"
+Formato obrigatório (2 linhas):
+LINHA 1: Um título curto e impactante em maiúsculas com emojis (ex: "📱 IPHONE EM OFERTA!" ou "🎮 GPU COM DESCONTO!")
+LINHA 2: Uma frase animada sobre o produto com emojis
 
 Regras:
-- Use emojis relevantes
-- Seja animado e direto
+- Sem aspas na resposta
 - Sem inventar preços ou prazos
-- Máximo 2 linhas curtas
 - Em português brasileiro
-- Sem aspas na resposta`
+- Direto e animado`
                 }
             ]
         });
@@ -490,9 +431,12 @@ client.on('ready', async () => {
 
                 let mensagem;
 
-                const copy = await gerarCopy(promo.titulo);
+const textoIA = await gerarCopy(promo.titulo);
+const linhas = textoIA.split('\n').filter(l => l.trim());
+const destaque = linhas[0] || '🔥 OFERTA INSANA';
+const copy = linhas.slice(1).join('\n') || '';
 
-                mensagem = `${destaque}
+mensagem = `${destaque}
 
 ${copy}
 
